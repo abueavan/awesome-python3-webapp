@@ -26,8 +26,9 @@ async def create_pool(loop,**kw):
         user=kw['user'],
         password=kw['password'],
         db=kw['db'],
-        charset=kw.get('charset', 'utf-8'),
-        autocommit=kw.get('maxsize', 10),
+        charset=kw.get('charset', 'utf8'),
+        autocommit=kw.get('autocommit',True),
+        maxsize=kw.get('maxsize', 10),
         minsize=kw.get('minsize', 1),
         loop=loop
 		)
@@ -37,7 +38,7 @@ async def destory_pool():
 	global __pool
 	if __pool is not None:
 		__pool.close
-	await __pool.await_closed()
+	    await __pool.wait_closed()
 
 #Package SELECT function that can execute SELECT command.
 #Setup 1:acquire connection from connection pool.
