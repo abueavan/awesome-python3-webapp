@@ -11,7 +11,7 @@ import asyncio,logging
 
 import aiomysql
 
-def log(sql,args()):
+def log(sql,args=()):
 	logging.info('SQL: %s' %sql)
 
 #创建一个全局的连接池，每个HTTP请求都可以从连接池中直接获取数据库连接
@@ -21,14 +21,14 @@ async def create_pool(loop,**kw):
 	global __pool
 	__pool = await aiomysql.create_pool(
 		#kw.get(key,default):通过key在kw中查找对应的value,如果没有则返回默认值default
-		host=kw.get('host','localhost')
-		port=kw.get('port',3306)
-        user=kw['user']
-        password=kw['password']
-        db=kw['db']
-        charset=kw.get('charset', 'utf-8')
-        autocommit=kw.get('maxsize', 10)
-        minsize=kw.get('minsize', 1)
+		host=kw.get('host','localhost'),
+		port=kw.get('port',3306),
+        user=kw['user'],
+        password=kw['password'],
+        db=kw['db'],
+        charset=kw.get('charset', 'utf-8'),
+        autocommit=kw.get('maxsize', 10),
+        minsize=kw.get('minsize', 1),
         loop=loop
 		)
 
@@ -61,7 +61,7 @@ async def select(sql, args, size=None):
 			return rs
 
  #Package execute function that can execute INSERT,UPDATE and DELETE command
- async def execute(sql,args,autocommit=True):
+async def execute(sql,args,autocommit=True):
  	log(sql)
  	async with __pool.acquire() as conn:
  		if not autocommit:
@@ -133,7 +133,7 @@ class FloatField(Field):
 class TextField(Field):
 
     def __init__(self, name=None, default=None):
-super().__init__(name, 'text', False, default)
+        super().__init__(name, 'text', False, default)
 
 #Meatclass about ORM
 #定义Model的metaclass元类
@@ -286,7 +286,7 @@ class Model(dict, metaclass=ModelMetaclass):
                 raise ValueError('Invalid limit value: %s' % str(limit))
         #execute SQL
         #返回的rs是一个元素是tuple的list 
-        rs = yield from select(' '.join(sql), args)
+        rs = await select(' '.join(sql), args)
         #**r 是关键字参数,构成了一个cls类的列表,其实就是每一条记录对应的类实例
         return [cls(**r) for r in rs]
 
@@ -298,7 +298,7 @@ class Model(dict, metaclass=ModelMetaclass):
         if where:
             sql.append('where')
             sql.append(where)
-        rs = yield from select(' '.join(sql), args, 1)
+        rs = await select(' '.join(sql), args, 1)
         if len(rs) == 0:
             return None
         return rs[0]['_num_']
@@ -307,7 +307,7 @@ class Model(dict, metaclass=ModelMetaclass):
     @classmethod
     async def find(cls, pk):
         ' find object by primary key. '
-        rs = yield from select('%s where `%s`=?' % (cls.__select__, cls.__primary_key__), [pk], 1)
+        rs = await select('%s where `%s`=?' % (cls.__select__, cls.__primary_key__), [pk], 1)
         if len(rs) == 0:
             return None
         return cls(**rs[0])
@@ -316,7 +316,7 @@ class Model(dict, metaclass=ModelMetaclass):
     async def save(self):
         args = list(map(self.getValueOrDefault, self.__fields__))
         args.append(self.getValueOrDefault(self.__primary_key__))
-        rows = yield from execute(self.__insert__, args)
+        rows = await execute(self.__insert__, args)
         if rows != 1:
             logging.warn('failed to insert record: affected rows: %s' % rows)
 
@@ -324,13 +324,13 @@ class Model(dict, metaclass=ModelMetaclass):
     async def update(self):
         args = list(map(self.getValue, self.__fields__))
         args.append(self.getValue(self.__primary_key__))
-        rows = yield from execute(self.__update__, args)
+        rows = await execute(self.__update__, args)
         if rows != 1:
             logging.warn('failed to update by primary key: affected rows: %s' % rows)
 
     #DELETE command
     async def remove(self):
         args = [self.getValue(self.__primary_key__)]
-        rows = yield from execute(self.__delete__, args)
+        rows = await execute(self.__delete__, args)
         if rows != 1:
-logging.warn('failed to remove by primary key: affected rows: %s' % rows)
+            logging.warn('failed to remove by primary key: affected rows: %s' % rows)
