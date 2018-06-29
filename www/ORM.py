@@ -35,10 +35,10 @@ async def create_pool(loop,**kw):
 
 #关闭连接池
 async def destory_pool():
-	global __pool
-	if __pool is not None:
-		__pool.close
-	    await __pool.wait_closed()
+    global __pool
+    if __pool is not None:
+        __pool.close()
+        await __pool.wait_closed()
 
 #Package SELECT function that can execute SELECT command.
 #Setup 1:acquire connection from connection pool.
