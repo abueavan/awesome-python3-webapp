@@ -169,46 +169,46 @@ class RequestHandler(object):
                     for k, v in parse.parse_qs(qs, True).items(): # 返回查询变量和值的映射，dict对象。True表示不忽略空格。  
                         kw[k] = v[0]  
 
-            if kw is None:  
-            # 若request中无参数  
-            # request.match_info返回dict对象。可变路由中的可变字段{variable}为参数名，传入request请求的path为值  
-            # 若存在可变路由：/a/{name}/c，可匹配path为：/a/jack/c的request  
-            # 则reqwuest.match_info返回{name = jack}  
-                kw = dict(**request.match_info)  
-            else: 
-            # request有参数  
-                if self._has_named_kw_args and (not self._has_var_kw_arg): 
-                # 若URL处理函数只有命名关键词参数没有关键词参数                 
-                    copy = dict()  
-                    # 只保留命名关键词参数  
-                    for name in self._named_kw_args:  
-                        if name in kw:  
-                            copy[name] = kw[name]  
-                    kw = copy # kw中只存在命名关键词参数  
-                # 将request.match_info中的参数传入kw  
-                for k, v in request.match_info.items():  
-                    # 检查kw中的参数是否和match_info中的重复  
-                    if k in kw:  
-                        logging.warn('Duplicate arg name in named arg and kw args: %s' % k)   
-                    kw[k] = v  
+        if kw is None:  
+        # 若request中无参数  
+        # request.match_info返回dict对象。可变路由中的可变字段{variable}为参数名，传入request请求的path为值  
+        # 若存在可变路由：/a/{name}/c，可匹配path为：/a/jack/c的request  
+        # 则reqwuest.match_info返回{name = jack}  
+            kw = dict(**request.match_info)  
+        else: 
+        # request有参数  
+            if self._has_named_kw_args and (not self._has_var_kw_arg): 
+            # 若URL处理函数只有命名关键词参数没有关键词参数                 
+                copy = dict()  
+                # 只保留命名关键词参数  
+                for name in self._named_kw_args:  
+                    if name in kw:  
+                        copy[name] = kw[name]  
+                kw = copy # kw中只存在命名关键词参数  
+            # 将request.match_info中的参数传入kw  
+            for k, v in request.match_info.items():  
+                # 检查kw中的参数是否和match_info中的重复  
+                if k in kw:  
+                    logging.warn('Duplicate arg name in named arg and kw args: %s' % k)   
+                kw[k] = v  
 
-            if self._has_request_arg: 
-            # URL处理函数存在request参数  
-                kw['request'] = request  
-            if self._required_kw_args: 
-            # URL处理函数存在默认值为空的命名关键词参数  
-                for name in self._required_kw_args:  
-                    if not name in kw: # 若未传入必须参数值，报错。  
-                        return web.HTTPBadRequest('Missing argument: %s' % name) 
+        if self._has_request_arg: 
+        # URL处理函数存在request参数  
+            kw['request'] = request  
+        if self._required_kw_args: 
+        # URL处理函数存在默认值为空的命名关键词参数  
+            for name in self._required_kw_args:  
+                if not name in kw: # 若未传入必须参数值，报错。  
+                    return web.HTTPBadRequest('Missing argument: %s' % name) 
 
-            # 至此，kw为URL处理函数fn真正能调用的参数  
-            # request请求中的参数，终于传递给了URL处理函数  
-            logging.info('call with args: %s' % str(kw))  
-            try:  
-                r = await self._func(**kw)  
-                return r  
-            except APIerror as e:  
-                return dict(error=e.error, data=e.data, message=e.message)  
+        # 至此，kw为URL处理函数fn真正能调用的参数  
+        # request请求中的参数，终于传递给了URL处理函数  
+        logging.info('call with args: %s' % str(kw))  
+        try:  
+            r = await self._func(**kw)  
+            return r  
+        except APIerror as e:  
+            return dict(error=e.error, data=e.data, message=e.message)  
 
 # 编写add_static函数用于注册静态文件，只提供文件路径即可进行注册
 # 添加静态文件，如image，css，javascript等  
@@ -236,7 +236,7 @@ def add_route(app, fn):
         fn = asyncio.coroutine(fn)  
     logging.info('add route %s %s => %s(%s)' % (method, path, fn.__name__, ','.join(inspect.signature(fn).parameters.keys())))  
     # 在app中注册经RequestHandler类封装的URL处理函数  
-    app.router.add_route(method, path, RequestHandler(app, fn))
+    app.router.add_route(method, path, RequestHandler(app,fn))
 
 '''
 add_route函数每次只能注册一个URL处理函数。若要批量注册URL处理函数，需要编写一个批注册函数add_routes。
