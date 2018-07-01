@@ -145,13 +145,13 @@ class RequestHandler(object):
                 if request.content_type == None: # 如果content_type不存在，返回400错误  
                     return web.HTTPBadRequest(text='Missing Content_Type.')  
                 ct = request.content_type.lower() # 小写，便于检查  
-                if ct.startwith('application/json'):  # json格式数据  
+                if ct.startswith('application/json'):  # json格式数据
                     params = await request.json() # 仅解析body字段的json数据  
                     if not isinstance(params, dict): # request.json()返回dict对象  
                         return web.HTTPBadRequest(text='JSON body must be object.')  
                     kw = params  
                 # form表单请求的编码形式  
-                elif ct.startwith('application/x-www-form-urlencoded') or ct.startswith('multipart/form-data'):  
+                elif ct.startswith('application/x-www-form-urlencoded') or ct.startswith('multipart/form-data'):
                     params = await request.post() # 返回post的内容中解析后的数据。dict-like对象。  
                     kw = dict(**params) # 组成dict，统一kw格式  
                 else:  
@@ -207,7 +207,7 @@ class RequestHandler(object):
         try:  
             r = await self._func(**kw)  
             return r  
-        except APIerror as e:  
+        except APIError as e:
             return dict(error=e.error, data=e.data, message=e.message)  
 
 # 编写add_static函数用于注册静态文件，只提供文件路径即可进行注册
