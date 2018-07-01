@@ -226,3 +226,21 @@ async def get_blog(id):
         'blog': blog,
         'comments': comments
     }
+
+#接口用于数据库返回日志,见manage_blogs.html
+@get('/api/blogs')
+async def api_blogs(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Blog.findNumber('count(id)')#查询日志总数
+    p = Page(num, page_index)
+    if num == 0: #数据库没日志
+        return dict(page=p, blogs=())
+    blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit)) #选取对应的日志
+    return dict(page=p, blogs=blogs)#返回管理页面信息，及显示日志数
+
+@get('/manage/blogs')
+def manage_blogs(*, page='1'):
+    return {
+        '__template__': 'manage_blogs.html',
+        'page_index': get_page_index(page)
+}
