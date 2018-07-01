@@ -141,7 +141,8 @@ async def response_factory(app, handler):
                 return resp  
             else: # 带模板信息，渲染模板  
                 # app['__templating__']获取已初始化的Environment对象，调用get_template()方法返回Template对象  
-                # 调用Template对象的render()方法，传入r渲染模板，返回unicode格式字符串，将其用utf-8编码  
+                # 调用Template对象的render()方法，传入r渲染模板，返回unicode格式字符串，将其用utf-8编码
+                r['__user__'] = request.__user__
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r))  
                 resp.content_type = 'text/html;charset=utf-8' # utf-8编码的html格式  
                 return resp 
